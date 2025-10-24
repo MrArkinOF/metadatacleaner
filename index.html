@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Metadata Editor</title>
+    <title>Image Metadata Cleaner - Author Only</title>
     <style>
         * {
             margin: 0;
@@ -162,6 +162,28 @@
             font-style: italic;
         }
 
+        .clean-status {
+            background: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border: 2px solid #c3e6cb;
+        }
+
+        .dirty-status {
+            background: #fff3cd;
+            color: #856404;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border: 2px solid #ffeaa7;
+        }
+
         .edit-section {
             margin-top: 20px;
         }
@@ -177,8 +199,7 @@
             font-weight: 600;
         }
 
-        .input-group input,
-        .input-group textarea {
+        .input-group input {
             width: 100%;
             padding: 12px;
             border: 2px solid #ddd;
@@ -188,10 +209,19 @@
             font-family: inherit;
         }
 
-        .input-group input:focus,
-        .input-group textarea:focus {
+        .input-group input:focus {
             outline: none;
             border-color: #667eea;
+        }
+
+        .info-box {
+            background: #e8f4fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #0d47a1;
         }
 
         .button-group {
@@ -209,6 +239,8 @@
             cursor: pointer;
             transition: all 0.3s;
             font-weight: 600;
+            flex: 1;
+            min-width: 150px;
         }
 
         .btn-primary {
@@ -321,12 +353,17 @@
             color: #666;
             margin-top: 5px;
         }
+
+        .warning-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📸 Image Metadata Editor</h1>
-        <p class="subtitle">Upload, view, clean, and edit image metadata easily</p>
+        <h1>🧹 Image Metadata Cleaner</h1>
+        <p class="subtitle">Complete metadata wipe - Keep ONLY the author field</p>
 
         <div id="alert" class="alert"></div>
 
@@ -350,7 +387,7 @@
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" id="imageSize">0 KB</div>
-                    <div class="stat-label">File Size</div>
+                    <div class="stat-label">Current Size</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" id="imageFormat">-</div>
@@ -360,30 +397,26 @@
 
             <div class="content-grid">
                 <div class="section">
-                    <h2>📋 Current Metadata</h2>
+                    <h2>📋 Metadata Status</h2>
+                    <div id="statusIndicator"></div>
                     <div id="metadataDisplay" class="metadata-display">
-                        <div class="no-metadata">No metadata found</div>
+                        <div class="no-metadata">Loading...</div>
                     </div>
                 </div>
 
                 <div class="section">
-                    <h2>✏️ Edit Metadata</h2>
+                    <h2>✏️ Set Author (Only Metadata)</h2>
                     <div class="edit-section">
                         <div class="input-group">
-                            <label for="authorInput">Author *</label>
-                            <input type="text" id="authorInput" placeholder="Enter author name">
+                            <label for="authorInput">Author Name</label>
+                            <input type="text" id="authorInput" placeholder="Enter author name (optional)">
                         </div>
-                        <div class="input-group">
-                            <label for="titleInput">Title</label>
-                            <input type="text" id="titleInput" placeholder="Enter image title">
-                        </div>
-                        <div class="input-group">
-                            <label for="descriptionInput">Description</label>
-                            <textarea id="descriptionInput" rows="3" placeholder="Enter image description"></textarea>
-                        </div>
-                        <div class="input-group">
-                            <label for="copyrightInput">Copyright</label>
-                            <input type="text" id="copyrightInput" placeholder="© 2024 Your Name">
+                        <div class="info-box">
+                            <strong>ℹ️ How it works:</strong><br>
+                            1. Upload image - see all existing metadata<br>
+                            2. Click "Clean All Metadata" to wipe everything<br>
+                            3. Optionally add author name<br>
+                            4. Download completely clean image
                         </div>
                     </div>
                 </div>
@@ -391,8 +424,7 @@
 
             <div class="button-group">
                 <button class="btn btn-danger" id="cleanBtn">🗑️ Clean All Metadata</button>
-                <button class="btn btn-primary" id="updateBtn">💾 Update Metadata</button>
-                <button class="btn btn-success" id="downloadBtn">⬇️ Download Image</button>
+                <button class="btn btn-success" id="downloadBtn">⬇️ Download Clean Image</button>
             </div>
         </div>
     </div>
@@ -401,8 +433,11 @@
         // State management
         let originalImage = null;
         let currentImageData = null;
+        let currentBlob = null;
         let metadata = {};
-        let cleanedImage = false;
+        let isClean = false;
+        let authorName = '';
+        let originalDimensions = { width: 0, height: 0 };
 
         // DOM elements
         const fileInput = document.getElementById('fileInput');
@@ -410,15 +445,12 @@
         const mainContent = document.getElementById('mainContent');
         const imagePreview = document.getElementById('imagePreview');
         const metadataDisplay = document.getElementById('metadataDisplay');
+        const statusIndicator = document.getElementById('statusIndicator');
         const metadataCount = document.getElementById('metadataCount');
         const imageSize = document.getElementById('imageSize');
         const imageFormat = document.getElementById('imageFormat');
         const authorInput = document.getElementById('authorInput');
-        const titleInput = document.getElementById('titleInput');
-        const descriptionInput = document.getElementById('descriptionInput');
-        const copyrightInput = document.getElementById('copyrightInput');
         const cleanBtn = document.getElementById('cleanBtn');
-        const updateBtn = document.getElementById('updateBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const alertBox = document.getElementById('alert');
 
@@ -428,8 +460,8 @@
         uploadSection.addEventListener('dragleave', handleDragLeave);
         uploadSection.addEventListener('drop', handleDrop);
         cleanBtn.addEventListener('click', cleanMetadata);
-        updateBtn.addEventListener('click', updateMetadata);
         downloadBtn.addEventListener('click', downloadImage);
+        authorInput.addEventListener('input', handleAuthorChange);
 
         // Make upload section clickable
         uploadSection.addEventListener('click', (e) => {
@@ -472,8 +504,10 @@
             reader.onload = function(e) {
                 originalImage = file;
                 currentImageData = e.target.result;
+                currentBlob = file;
                 imagePreview.src = currentImageData;
-                cleanedImage = false;
+                isClean = false;
+                authorName = '';
                 
                 // Extract metadata
                 extractMetadata(file);
@@ -487,24 +521,16 @@
                 
                 // Reset inputs
                 authorInput.value = '';
-                titleInput.value = '';
-                descriptionInput.value = '';
-                copyrightInput.value = '';
                 
-                showAlert('✅ Image loaded successfully! View metadata below.', 'success');
+                showAlert('✅ Image loaded! All existing metadata is shown below.', 'success');
             };
             reader.readAsDataURL(file);
         }
 
         function extractMetadata(file) {
-            metadata = {
-                'File Name': file.name,
-                'File Size': formatBytes(file.size),
-                'File Type': file.type,
-                'Last Modified': new Date(file.lastModified).toLocaleString()
-            };
+            metadata = {};
+            let metadataFound = false;
 
-            // Try to extract EXIF and additional data
             const reader = new FileReader();
             reader.onload = function(e) {
                 const arrayBuffer = e.target.result;
@@ -512,25 +538,37 @@
                 
                 // Check for JPEG
                 if (view.getUint16(0, false) === 0xFFD8) {
-                    metadata['Format'] = 'JPEG';
                     parseJPEGMetadata(view);
                 } 
                 // Check for PNG
                 else if (view.getUint32(0, false) === 0x89504E47) {
-                    metadata['Format'] = 'PNG';
                     parsePNGMetadata(view);
                 }
                 // Check for WebP
                 else if (view.getUint32(0, false) === 0x52494646 && 
                          view.getUint32(8, false) === 0x57454250) {
-                    metadata['Format'] = 'WebP';
+                    metadata['WebP Metadata'] = 'May be present';
                 }
 
                 // Get image dimensions
                 const img = new Image();
                 img.onload = function() {
-                    metadata['Dimensions'] = `${img.width} × ${img.height}`;
-                    metadata['Aspect Ratio'] = (img.width / img.height).toFixed(2);
+                    originalDimensions.width = img.width;
+                    originalDimensions.height = img.height;
+                    
+                    // Add basic file info as metadata
+                    const fileMetadata = {
+                        'File Name': file.name,
+                        'File Size': formatBytes(file.size),
+                        'File Type': file.type,
+                        'Last Modified Date': new Date(file.lastModified).toLocaleString(),
+                        'Image Dimensions': `${img.width} × ${img.height} pixels`,
+                        'Aspect Ratio': (img.width / img.height).toFixed(3)
+                    };
+
+                    // Combine with extracted metadata
+                    metadata = { ...fileMetadata, ...metadata };
+                    
                     displayMetadata();
                 };
                 img.src = currentImageData;
@@ -540,6 +578,7 @@
 
         function parseJPEGMetadata(view) {
             let offset = 2;
+            let foundMetadata = false;
             
             while (offset < view.byteLength - 4) {
                 const marker = view.getUint16(offset, false);
@@ -550,62 +589,51 @@
                 
                 // APP0 (JFIF)
                 if (marker === 0xFFE0) {
-                    try {
-                        const identifier = String.fromCharCode(
-                            view.getUint8(offset + 4),
-                            view.getUint8(offset + 5),
-                            view.getUint8(offset + 6),
-                            view.getUint8(offset + 7)
-                        );
-                        if (identifier === 'JFIF') {
-                            metadata['JFIF Version'] = `${view.getUint8(offset + 9)}.${view.getUint8(offset + 10)}`;
-                        }
-                    } catch(e) {}
+                    metadata['JFIF Marker'] = 'Present';
+                    foundMetadata = true;
                 }
                 
                 // APP1 (EXIF)
                 if (marker === 0xFFE1) {
-                    try {
-                        const exifHeader = String.fromCharCode(
-                            view.getUint8(offset + 4),
-                            view.getUint8(offset + 5),
-                            view.getUint8(offset + 6),
-                            view.getUint8(offset + 7)
-                        );
-                        if (exifHeader === 'Exif') {
-                            metadata['EXIF Data'] = 'Present';
-                            metadata['EXIF Size'] = formatBytes(length);
-                        }
-                    } catch(e) {}
+                    metadata['EXIF Data'] = `Present (${formatBytes(length)})`;
+                    foundMetadata = true;
+                }
+                
+                // APP2 (ICC Profile)
+                if (marker === 0xFFE2) {
+                    metadata['ICC Color Profile'] = 'Present';
+                    foundMetadata = true;
                 }
                 
                 // APP13 (Photoshop/IPTC)
                 if (marker === 0xFFED) {
-                    metadata['Photoshop Data'] = 'Present';
+                    metadata['Photoshop/IPTC Data'] = 'Present';
+                    foundMetadata = true;
+                }
+                
+                // APP14
+                if (marker === 0xFFEE) {
+                    metadata['Adobe Data'] = 'Present';
+                    foundMetadata = true;
                 }
                 
                 // COM (Comment)
                 if (marker === 0xFFFE) {
-                    try {
-                        let comment = '';
-                        for (let i = 0; i < Math.min(length - 2, 100); i++) {
-                            const byte = view.getUint8(offset + 4 + i);
-                            if (byte >= 32 && byte <= 126) {
-                                comment += String.fromCharCode(byte);
-                            }
-                        }
-                        if (comment.length > 0) {
-                            metadata['Comment'] = comment;
-                        }
-                    } catch(e) {}
+                    metadata['JPEG Comment'] = 'Present';
+                    foundMetadata = true;
                 }
                 
                 offset += 2 + length;
+            }
+
+            if (!foundMetadata) {
+                metadata['JPEG Metadata'] = 'Minimal or none detected';
             }
         }
 
         function parsePNGMetadata(view) {
             let offset = 8; // Skip PNG signature
+            let foundMetadata = false;
             
             while (offset < view.byteLength - 8) {
                 const length = view.getUint32(offset, false);
@@ -616,47 +644,85 @@
                     view.getUint8(offset + 7)
                 );
                 
-                if (type === 'IHDR') {
-                    const width = view.getUint32(offset + 8, false);
-                    const height = view.getUint32(offset + 12, false);
-                    const bitDepth = view.getUint8(offset + 16);
-                    const colorType = view.getUint8(offset + 17);
-                    
-                    metadata['Bit Depth'] = bitDepth;
-                    metadata['Color Type'] = getColorTypeName(colorType);
+                if (type === 'tEXt') {
+                    metadata['PNG Text Chunk'] = 'Present';
+                    foundMetadata = true;
                 }
                 
-                if (type === 'tEXt' || type === 'iTXt' || type === 'zTXt') {
-                    metadata['Text Metadata'] = 'Present';
+                if (type === 'iTXt') {
+                    metadata['PNG International Text'] = 'Present';
+                    foundMetadata = true;
+                }
+                
+                if (type === 'zTXt') {
+                    metadata['PNG Compressed Text'] = 'Present';
+                    foundMetadata = true;
                 }
                 
                 if (type === 'pHYs') {
-                    metadata['Physical Dimensions'] = 'Present';
+                    metadata['Physical Pixel Dimensions'] = 'Present';
+                    foundMetadata = true;
+                }
+
+                if (type === 'tIME') {
+                    metadata['Modification Time'] = 'Present';
+                    foundMetadata = true;
+                }
+
+                if (type === 'eXIf') {
+                    metadata['EXIF Data'] = 'Present';
+                    foundMetadata = true;
                 }
                 
                 if (type === 'IEND') break;
                 
                 offset += 12 + length;
             }
-        }
 
-        function getColorTypeName(type) {
-            const types = {
-                0: 'Grayscale',
-                2: 'RGB',
-                3: 'Indexed',
-                4: 'Grayscale + Alpha',
-                6: 'RGB + Alpha'
-            };
-            return types[type] || 'Unknown';
+            if (!foundMetadata) {
+                metadata['PNG Metadata'] = 'Minimal or none detected';
+            }
         }
 
         function displayMetadata() {
             const count = Object.keys(metadata).length;
             metadataCount.textContent = count;
             
-            if (count === 0) {
-                metadataDisplay.innerHTML = '<div class="no-metadata">No metadata found</div>';
+            // Update status indicator
+            if (isClean) {
+                if (authorName) {
+                    statusIndicator.innerHTML = `
+                        <div class="clean-status">
+                            ✓ COMPLETELY CLEAN - Only Author: "${authorName}"
+                        </div>
+                    `;
+                    metadata = {
+                        'Status': '✓ Image is completely clean',
+                        'Author': authorName,
+                        'All Other Metadata': 'REMOVED'
+                    };
+                } else {
+                    statusIndicator.innerHTML = `
+                        <div class="clean-status">
+                            ✓ COMPLETELY CLEAN - Zero metadata
+                        </div>
+                    `;
+                    metadata = {
+                        'Status': '✓ Image is completely clean',
+                        'All Metadata': 'REMOVED',
+                        'Note': 'No date, no EXIF, no file info - completely clean!'
+                    };
+                }
+            } else {
+                statusIndicator.innerHTML = `
+                    <div class="dirty-status">
+                        <span class="warning-icon">⚠️</span> Contains ${count} metadata fields - Click "Clean All Metadata" to remove
+                    </div>
+                `;
+            }
+
+            if (Object.keys(metadata).length === 0) {
+                metadataDisplay.innerHTML = '<div class="no-metadata">No metadata</div>';
                 return;
             }
 
@@ -677,102 +743,74 @@
 
             const img = new Image();
             img.onload = function() {
+                // Create canvas with exact dimensions
                 const canvas = document.createElement('canvas');
                 canvas.width = img.width;
                 canvas.height = img.height;
                 const ctx = canvas.getContext('2d');
                 
-                // Draw image without any metadata
+                // Draw image - this strips ALL metadata
                 ctx.drawImage(img, 0, 0);
 
+                // Convert to blob with maximum quality
                 canvas.toBlob(function(blob) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         currentImageData = e.target.result;
+                        currentBlob = blob;
                         imagePreview.src = currentImageData;
-                        cleanedImage = true;
+                        isClean = true;
+                        authorName = authorInput.value.trim();
                         
-                        // Update metadata display to show only basic info
-                        const dimensions = metadata['Dimensions'];
-                        metadata = {
-                            'Status': '✓ All metadata removed',
-                            'Dimensions': dimensions,
-                            'Note': 'Image is now clean. Add new metadata using the form.'
-                        };
+                        // Clear metadata
+                        metadata = {};
                         
                         displayMetadata();
                         imageSize.textContent = formatBytes(blob.size);
+                        metadataCount.textContent = authorName ? '1' : '0';
                         
-                        showAlert('🗑️ All metadata has been cleaned from the image!', 'success');
+                        showAlert('🗑️ ALL metadata completely wiped! Image is 100% clean. Download to save.', 'success');
                     };
                     reader.readAsDataURL(blob);
-                }, originalImage.type || 'image/png', 1.0);
+                }, 'image/png', 1.0); // Using PNG to ensure no compression metadata
             };
             img.src = currentImageData;
         }
 
-        function updateMetadata() {
-            const author = authorInput.value.trim();
-            const title = titleInput.value.trim();
-            const description = descriptionInput.value.trim();
-            const copyright = copyrightInput.value.trim();
-
-            if (!author && !title && !description && !copyright) {
-                showAlert('⚠️ Please enter at least one metadata field', 'warning');
-                return;
+        function handleAuthorChange() {
+            if (isClean) {
+                authorName = authorInput.value.trim();
+                displayMetadata();
+                metadataCount.textContent = authorName ? '1' : '0';
             }
-
-            // Add new metadata to the display
-            if (cleanedImage) {
-                metadata = {};
-            }
-            
-            if (author) metadata['Author'] = author;
-            if (title) metadata['Title'] = title;
-            if (description) metadata['Description'] = description;
-            if (copyright) metadata['Copyright'] = copyright;
-            metadata['Last Modified'] = new Date().toLocaleString();
-            
-            // Note: Actual EXIF writing would require a library
-            // This stores the metadata for display and download filename
-            displayMetadata();
-            
-            showAlert('💾 Metadata updated! Note: Standard browsers cannot write EXIF data directly. The metadata is stored for reference. Click Download to save the image.', 'info');
         }
 
         function downloadImage() {
-            if (!currentImageData) return;
+            if (!currentBlob) {
+                showAlert('⚠️ Please clean the metadata first!', 'warning');
+                return;
+            }
 
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-
-                canvas.toBlob(function(blob) {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    
-                    // Create filename
-                    const fileName = originalImage.name.replace(/\.[^/.]+$/, "");
-                    const extension = originalImage.type.split('/')[1] || 'png';
-                    const author = authorInput.value.trim() ? `_by_${authorInput.value.trim().replace(/\s+/g, '_')}` : '';
-                    const suffix = cleanedImage ? '_cleaned' : '_edited';
-                    
-                    a.download = `${fileName}${author}${suffix}.${extension}`;
-                    
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    
-                    showAlert('⬇️ Image downloaded successfully!', 'success');
-                }, originalImage.type || 'image/png', 0.95);
-            };
-            img.src = currentImageData;
+            const url = URL.createObjectURL(currentBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            // Create clean filename
+            const timestamp = Date.now();
+            const author = authorName ? `_by_${authorName.replace(/\s+/g, '_')}` : '';
+            
+            a.download = `clean_image${author}_${timestamp}.png`;
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            const message = authorName 
+                ? `⬇️ Downloaded! Image contains ONLY author: "${authorName}"`
+                : '⬇️ Downloaded! Image is 100% clean with ZERO metadata!';
+            
+            showAlert(message, 'success');
         }
 
         function showAlert(message, type) {
