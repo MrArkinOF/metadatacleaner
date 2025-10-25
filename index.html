@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Bulk Image Metadata Cleaner</title>
+    <title>Universal Media Metadata Cleaner - Images & Videos</title>
     <style>
         * {
             margin: 0;
@@ -38,6 +38,25 @@
             text-align: center;
             color: #666;
             margin-bottom: 30px;
+        }
+
+        .media-type-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .badge-image {
+            background: #3498db;
+            color: white;
+        }
+
+        .badge-video {
+            background: #e74c3c;
+            color: white;
         }
 
         .top-actions {
@@ -129,6 +148,10 @@
 
         .upload-btn-secondary {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .upload-btn-video {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
         }
 
         .control-panel {
@@ -252,13 +275,6 @@
             color: #667eea;
         }
 
-        .bulk-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 20px;
-        }
-
         .btn {
             padding: 12px 24px;
             border: none;
@@ -331,6 +347,19 @@
             font-size: 16px;
         }
 
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            flex: 1;
+        }
+
+        .bulk-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
         .stats-bar {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -357,14 +386,14 @@
             opacity: 0.9;
         }
 
-        .images-grid {
+        .media-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
 
-        .image-card {
+        .media-card {
             background: #f8f9fa;
             border-radius: 10px;
             overflow: hidden;
@@ -372,23 +401,29 @@
             transition: transform 0.3s;
         }
 
-        .image-card:hover {
+        .media-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 5px 20px rgba(0,0,0,0.15);
         }
 
-        .image-card-preview {
+        .media-card-preview {
             width: 100%;
             height: 200px;
             object-fit: cover;
             background: #e9ecef;
         }
 
-        .image-card-body {
+        .media-card-preview video {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .media-card-body {
             padding: 15px;
         }
 
-        .image-card-title {
+        .media-card-title {
             font-size: 14px;
             font-weight: 600;
             color: #333;
@@ -398,13 +433,13 @@
             white-space: nowrap;
         }
 
-        .image-card-info {
+        .media-card-info {
             font-size: 12px;
             color: #666;
             margin-bottom: 5px;
         }
 
-        .image-card-status {
+        .media-card-status {
             display: inline-block;
             padding: 4px 10px;
             border-radius: 20px;
@@ -428,16 +463,10 @@
             color: #0c5460;
         }
 
-        .image-card-actions {
+        .media-card-actions {
             display: flex;
             gap: 8px;
             margin-top: 10px;
-        }
-
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 12px;
-            flex: 1;
         }
 
         .metadata-preview {
@@ -480,6 +509,11 @@
             background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
             transition: width 0.3s;
             border-radius: 10px;
+        }
+
+        .processing-indicator {
+            display: inline-block;
+            margin-left: 10px;
         }
 
         .alert {
@@ -568,17 +602,6 @@
             color: #0d47a1;
         }
 
-        .feature-badge {
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            margin-left: 8px;
-            font-weight: 600;
-        }
-
         .modal {
             display: none;
             position: fixed;
@@ -601,7 +624,7 @@
             background: white;
             padding: 30px;
             border-radius: 15px;
-            max-width: 800px;
+            max-width: 900px;
             max-height: 90vh;
             overflow-y: auto;
             width: 90%;
@@ -645,33 +668,53 @@
             color: #333;
         }
 
-        .comparison-view {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .comparison-side {
-            text-align: center;
-        }
-
-        .comparison-side h3 {
-            margin-bottom: 10px;
-            color: #667eea;
-        }
-
-        .comparison-side img {
-            width: 100%;
+        .metadata-display {
+            background: white;
+            padding: 15px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .metadata-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 10px;
+        }
+
+        .metadata-item:last-child {
+            border-bottom: none;
+        }
+
+        .metadata-key {
+            font-weight: bold;
+            color: #667eea;
+            word-break: break-word;
+        }
+
+        .metadata-value {
+            color: #333;
+            word-break: break-all;
+        }
+
+        .video-settings-section {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 2px solid #ffc107;
+        }
+
+        .video-settings-section h4 {
+            color: #856404;
+            margin-bottom: 10px;
         }
 
         @media (max-width: 768px) {
-            .comparison-view {
-                grid-template-columns: 1fr;
-            }
-            
             .top-actions.show {
                 flex-direction: column;
             }
@@ -688,20 +731,25 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎨 Advanced Image Metadata Cleaner</h1>
-        <p class="subtitle">Professional bulk image processing with complete metadata control</p>
+        <h1>🎬 Universal Media Metadata Cleaner</h1>
+        <p class="subtitle">Process images and videos - Auto-detects media type • Complete metadata control</p>
 
         <div id="alert" class="alert"></div>
 
         <!-- Top Actions Bar -->
         <div id="topActions" class="top-actions">
             <div class="top-actions-left">
-                <h3>📦 <span id="topTotalImages">0</span> Images Loaded</h3>
-                <p><span id="topCleanedImages">0</span> cleaned • <span id="topTotalSize">0 MB</span> total</p>
+                <h3>📦 <span id="topTotalMedia">0</span> Files Loaded</h3>
+                <p>
+                    <span id="topImageCount">0</span> images • 
+                    <span id="topVideoCount">0</span> videos • 
+                    <span id="topCleanedMedia">0</span> processed • 
+                    <span id="topTotalSize">0 MB</span> total
+                </p>
             </div>
             <div class="top-actions-right">
                 <button class="btn btn-danger btn-large" id="topCleanAllBtn">
-                    🗑️ Clean All
+                    🗑️ Process All
                 </button>
                 <button class="btn btn-success btn-large" id="topDownloadAllBtn">
                     ⬇️ Download All as ZIP
@@ -711,12 +759,14 @@
 
         <div class="upload-section" id="uploadSection">
             <div class="upload-icon">📁</div>
-            <h3>Upload Your Images</h3>
-            <p style="margin: 10px 0; color: #666;">Drag and drop files/folders or click to select</p>
+            <h3>Upload Your Media Files</h3>
+            <p style="margin: 10px 0; color: #666;">
+                Supports: Images (JPG, PNG, WebP, GIF) & Videos (MP4, WebM, AVI, MOV, MKV)
+            </p>
             
             <div class="upload-buttons">
-                <input type="file" id="fileInput" accept="image/*" multiple>
-                <label for="fileInput" class="upload-btn">📄 Select Multiple Files</label>
+                <input type="file" id="fileInput" accept="image/*,video/*" multiple>
+                <label for="fileInput" class="upload-btn">📄 Select Files</label>
                 
                 <input type="file" id="folderInput" webkitdirectory directory multiple>
                 <label for="folderInput" class="upload-btn upload-btn-secondary">📂 Select Folder</label>
@@ -727,11 +777,15 @@
             <div class="stats-bar">
                 <div class="stat-card">
                     <div class="stat-value" id="totalImages">0</div>
-                    <div class="stat-label">Total Images</div>
+                    <div class="stat-label">Images</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="cleanedImages">0</div>
-                    <div class="stat-label">Cleaned</div>
+                    <div class="stat-value" id="totalVideos">0</div>
+                    <div class="stat-label">Videos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="cleanedMedia">0</div>
+                    <div class="stat-label">Processed</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="totalSize">0 MB</div>
@@ -747,6 +801,7 @@
                 <div class="control-tabs">
                     <button class="tab-btn active" data-tab="metadata">📝 Metadata Settings</button>
                     <button class="tab-btn" data-tab="image">🖼️ Image Processing</button>
+                    <button class="tab-btn" data-tab="video">🎬 Video Processing</button>
                     <button class="tab-btn" data-tab="export">💾 Export Options</button>
                     <button class="tab-btn" data-tab="batch">⚙️ Batch Actions</button>
                 </div>
@@ -764,25 +819,26 @@
                         </div>
                         <div class="input-group">
                             <label for="titleInput">📌 Title</label>
-                            <input type="text" id="titleInput" placeholder="Enter image title">
+                            <input type="text" id="titleInput" placeholder="Enter media title">
                         </div>
                         <div class="input-group">
-                            <label for="keywordsInput">🏷️ Keywords</label>
-                            <input type="text" id="keywordsInput" placeholder="nature, landscape, photo">
+                            <label for="keywordsInput">🏷️ Keywords/Tags</label>
+                            <input type="text" id="keywordsInput" placeholder="nature, video, photo">
                         </div>
                         <div class="input-group">
                             <label for="descriptionInput">📄 Description</label>
-                            <textarea id="descriptionInput" placeholder="Enter image description"></textarea>
+                            <textarea id="descriptionInput" placeholder="Enter media description"></textarea>
                         </div>
                         <div class="input-group">
                             <label for="creditInput">💳 Credit/Source</label>
-                            <input type="text" id="creditInput" placeholder="Photo credit">
+                            <input type="text" id="creditInput" placeholder="Media credit">
                         </div>
                     </div>
                     
                     <div class="info-box">
                         <strong>ℹ️ Metadata Options:</strong> Leave all fields empty for complete metadata wipe. 
-                        Fill in only the fields you want to keep. All other metadata will be removed.
+                        Fill in only the fields you want to keep. All other metadata will be removed. 
+                        Works for both images and videos!
                     </div>
                 </div>
 
@@ -833,6 +889,90 @@
                                 <option value="contrast">Increase Contrast</option>
                             </select>
                         </div>
+
+                        <div class="input-group">
+                            <label>📦 Image Output Format</label>
+                            <select id="imageFormat">
+                                <option value="png">PNG (Lossless)</option>
+                                <option value="jpeg">JPEG (Compressed)</option>
+                                <option value="webp">WebP (Modern)</option>
+                                <option value="original">Keep Original</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video Processing Tab -->
+                <div id="videoTab" class="tab-content">
+                    <div class="video-settings-section">
+                        <h4>⚠️ Video Processing Notes</h4>
+                        <p style="font-size: 13px; color: #856404; line-height: 1.6;">
+                            • Browser-based video re-encoding has limitations<br>
+                            • Large videos may take time to process<br>
+                            • Output format depends on browser support<br>
+                            • All metadata will be stripped during re-encoding
+                        </p>
+                    </div>
+
+                    <div class="settings-grid">
+                        <div class="input-group">
+                            <label>🎥 Video Quality</label>
+                            <div class="range-group">
+                                <input type="range" id="videoQualitySlider" min="1" max="10" value="8">
+                                <span class="range-value" id="videoQualityValue">High</span>
+                            </div>
+                            <small style="color: #666;">1=Low, 5=Medium, 8=High, 10=Maximum</small>
+                        </div>
+
+                        <div class="input-group">
+                            <label>📦 Video Output Format</label>
+                            <select id="videoFormat">
+                                <option value="webm">WebM (VP8/VP9)</option>
+                                <option value="mp4">MP4 (H.264) - if supported</option>
+                                <option value="original">Keep Original Format</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>🎬 Video Processing Options</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="videoStripAudio">
+                                <label for="videoStripAudio">Strip Audio Track</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="videoTrimEnabled">
+                                <label for="videoTrimEnabled">Enable Trim (Start/End)</label>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>⏱️ Bitrate (Mbps)</label>
+                            <select id="videoBitrate">
+                                <option value="1000000">1 Mbps (Low)</option>
+                                <option value="2500000" selected>2.5 Mbps (Medium)</option>
+                                <option value="5000000">5 Mbps (High)</option>
+                                <option value="10000000">10 Mbps (Very High)</option>
+                                <option value="auto">Auto (Browser Default)</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>📐 Video Resolution</label>
+                            <select id="videoResolution">
+                                <option value="original">Keep Original</option>
+                                <option value="480">480p</option>
+                                <option value="720">720p (HD)</option>
+                                <option value="1080">1080p (Full HD)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>💡 Video Tips:</strong><br>
+                        • Processing videos strips ALL metadata including GPS, camera info, and timestamps<br>
+                        • Re-encoding may reduce file size significantly<br>
+                        • For best compatibility, use WebM format<br>
+                        • Processing time varies based on video length and quality
                     </div>
                 </div>
 
@@ -840,42 +980,36 @@
                 <div id="exportTab" class="tab-content">
                     <div class="settings-grid">
                         <div class="input-group">
-                            <label>📦 Output Format</label>
-                            <select id="outputFormat">
-                                <option value="png">PNG (Lossless)</option>
-                                <option value="jpeg">JPEG (Compressed)</option>
-                                <option value="webp">WebP (Modern)</option>
-                                <option value="original">Keep Original</option>
-                            </select>
-                        </div>
-
-                        <div class="input-group">
                             <label>📝 Filename Pattern</label>
                             <input type="text" id="filenamePattern" placeholder="e.g., clean_{original}_{date}">
                             <small style="color: #666; display: block; margin-top: 5px;">
-                                Use: {original}, {author}, {date}, {index}
+                                Use: {original}, {author}, {date}, {index}, {type}
                             </small>
                         </div>
 
                         <div class="input-group">
-                            <label>🗂️ Folder Structure</label>
+                            <label>🗂️ Folder Structure in ZIP</label>
                             <select id="folderStructure">
                                 <option value="flat">Single Folder</option>
+                                <option value="bytype">Organize by Type (Images/Videos)</option>
                                 <option value="original">Keep Original Structure</option>
                                 <option value="bydate">Organize by Date</option>
-                                <option value="bysize">Organize by Size</option>
                             </select>
                         </div>
 
                         <div class="input-group">
                             <label>📋 Export Options</label>
                             <div class="checkbox-group">
-                                <input type="checkbox" id="exportMetadataFile">
+                                <input type="checkbox" id="exportMetadataFile" checked>
                                 <label for="exportMetadataFile">Include metadata report (CSV)</label>
                             </div>
                             <div class="checkbox-group">
                                 <input type="checkbox" id="exportReadme" checked>
                                 <label for="exportReadme">Include README file</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="separateByType" checked>
+                                <label for="separateByType">Separate images and videos in ZIP</label>
                             </div>
                         </div>
                     </div>
@@ -885,16 +1019,19 @@
                 <div id="batchTab" class="tab-content">
                     <div class="bulk-actions">
                         <button class="btn btn-danger" id="cleanAllBtn">
-                            🗑️ Clean All Metadata
+                            🗑️ Process All Media
                         </button>
                         <button class="btn btn-success" id="downloadAllBtn">
                             ⬇️ Download All (ZIP)
                         </button>
-                        <button class="btn btn-primary" id="applySettingsBtn">
-                            ✨ Apply Settings to All
+                        <button class="btn btn-primary" id="processImagesOnlyBtn">
+                            🖼️ Process Images Only
+                        </button>
+                        <button class="btn btn-primary" id="processVideosOnlyBtn">
+                            🎬 Process Videos Only
                         </button>
                         <button class="btn btn-warning" id="resetAllBtn">
-                            🔄 Reset All to Original
+                            🔄 Reset All
                         </button>
                         <button class="btn btn-info" id="selectAllBtn">
                             ✓ Select All
@@ -909,21 +1046,22 @@
                     </div>
 
                     <div class="info-box" style="margin-top: 20px;">
-                        <strong>💡 Batch Tips:</strong><br>
-                        • Use "Clean All" to remove all metadata from all images<br>
-                        • Use "Apply Settings" to add your custom metadata to all images<br>
-                        • Select specific images to process only those<br>
-                        • Download creates a ZIP with all processed images
+                        <strong>💡 Batch Processing Tips:</strong><br>
+                        • "Process All" handles both images and videos<br>
+                        • Use type-specific buttons to process only images or videos<br>
+                        • Video processing takes longer - be patient!<br>
+                        • All metadata is completely removed during processing<br>
+                        • Download creates organized ZIP with all processed files
                     </div>
                 </div>
             </div>
 
-            <div id="imagesGrid" class="images-grid"></div>
+            <div id="mediaGrid" class="media-grid"></div>
 
             <div id="emptyState" class="empty-state hidden">
-                <div class="empty-state-icon">🖼️</div>
-                <h3>No images loaded</h3>
-                <p>Upload some images to get started</p>
+                <div class="empty-state-icon">🎬</div>
+                <h3>No media files loaded</h3>
+                <p>Upload images or videos to get started</p>
             </div>
         </div>
     </div>
@@ -939,24 +1077,13 @@
         </div>
     </div>
 
-    <!-- Comparison Modal -->
-    <div id="comparisonModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>🔍 Before/After Comparison</h2>
-                <button class="close-modal" onclick="closeComparisonModal()">&times;</button>
-            </div>
-            <div class="comparison-view" id="comparisonContent"></div>
-        </div>
-    </div>
-
     <!-- JSZip Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script>
         // State management
-        let images = [];
-        let imageIdCounter = 0;
+        let mediaFiles = [];
+        let mediaIdCounter = 0;
 
         // DOM elements
         const fileInput = document.getElementById('fileInput');
@@ -964,17 +1091,22 @@
         const uploadSection = document.getElementById('uploadSection');
         const mainContent = document.getElementById('mainContent');
         const topActions = document.getElementById('topActions');
-        const imagesGrid = document.getElementById('imagesGrid');
+        const mediaGrid = document.getElementById('mediaGrid');
         const emptyState = document.getElementById('emptyState');
         const alertBox = document.getElementById('alert');
 
         // Stats elements
         const totalImagesEl = document.getElementById('totalImages');
-        const cleanedImagesEl = document.getElementById('cleanedImages');
+        const totalVideosEl = document.getElementById('totalVideos');
+        const cleanedMediaEl = document.getElementById('cleanedMedia');
         const totalSizeEl = document.getElementById('totalSize');
         const savedSizeEl = document.getElementById('savedSize');
-        const topTotalImagesEl = document.getElementById('topTotalImages');
-        const topCleanedImagesEl = document.getElementById('topCleanedImages');
+
+        // Top stats
+        const topTotalMediaEl = document.getElementById('topTotalMedia');
+        const topImageCountEl = document.getElementById('topImageCount');
+        const topVideoCountEl = document.getElementById('topVideoCount');
+        const topCleanedMediaEl = document.getElementById('topCleanedMedia');
         const topTotalSizeEl = document.getElementById('topTotalSize');
 
         // Control elements
@@ -984,6 +1116,8 @@
         const keywordsInput = document.getElementById('keywordsInput');
         const descriptionInput = document.getElementById('descriptionInput');
         const creditInput = document.getElementById('creditInput');
+        
+        // Image settings
         const qualitySlider = document.getElementById('qualitySlider');
         const qualityValue = document.getElementById('qualityValue');
         const resizeEnabled = document.getElementById('resizeEnabled');
@@ -991,15 +1125,23 @@
         const resizeValue = document.getElementById('resizeValue');
         const rotationSelect = document.getElementById('rotationSelect');
         const filterSelect = document.getElementById('filterSelect');
-        const outputFormat = document.getElementById('outputFormat');
-        const filenamePattern = document.getElementById('filenamePattern');
+        const imageFormat = document.getElementById('imageFormat');
+
+        // Video settings
+        const videoQualitySlider = document.getElementById('videoQualitySlider');
+        const videoQualityValue = document.getElementById('videoQualityValue');
+        const videoFormat = document.getElementById('videoFormat');
+        const videoStripAudio = document.getElementById('videoStripAudio');
+        const videoBitrate = document.getElementById('videoBitrate');
+        const videoResolution = document.getElementById('videoResolution');
 
         // Button elements
         const cleanAllBtn = document.getElementById('cleanAllBtn');
         const downloadAllBtn = document.getElementById('downloadAllBtn');
         const topCleanAllBtn = document.getElementById('topCleanAllBtn');
         const topDownloadAllBtn = document.getElementById('topDownloadAllBtn');
-        const applySettingsBtn = document.getElementById('applySettingsBtn');
+        const processImagesOnlyBtn = document.getElementById('processImagesOnlyBtn');
+        const processVideosOnlyBtn = document.getElementById('processVideosOnlyBtn');
         const resetAllBtn = document.getElementById('resetAllBtn');
         const selectAllBtn = document.getElementById('selectAllBtn');
         const deselectAllBtn = document.getElementById('deselectAllBtn');
@@ -1014,17 +1156,23 @@
         uploadSection.addEventListener('dragleave', handleDragLeave);
         uploadSection.addEventListener('drop', handleDrop);
         
-        cleanAllBtn.addEventListener('click', cleanAllImages);
-        downloadAllBtn.addEventListener('click', downloadAllImages);
-        topCleanAllBtn.addEventListener('click', cleanAllImages);
-        topDownloadAllBtn.addEventListener('click', downloadAllImages);
-        applySettingsBtn.addEventListener('click', applySettingsToAll);
-        resetAllBtn.addEventListener('click', resetAllImages);
+        cleanAllBtn.addEventListener('click', () => processAllMedia());
+        downloadAllBtn.addEventListener('click', downloadAllMedia);
+        topCleanAllBtn.addEventListener('click', () => processAllMedia());
+        topDownloadAllBtn.addEventListener('click', downloadAllMedia);
+        processImagesOnlyBtn.addEventListener('click', () => processAllMedia('image'));
+        processVideosOnlyBtn.addEventListener('click', () => processAllMedia('video'));
+        resetAllBtn.addEventListener('click', resetAllMedia);
         selectAllBtn.addEventListener('click', selectAll);
         deselectAllBtn.addEventListener('click', deselectAll);
 
         qualitySlider.addEventListener('input', (e) => {
             qualityValue.textContent = e.target.value + '%';
+        });
+
+        videoQualitySlider.addEventListener('input', (e) => {
+            const qualities = ['Very Low', 'Low', 'Low', 'Medium', 'Medium', 'Good', 'Good', 'High', 'High', 'Very High', 'Maximum'];
+            videoQualityValue.textContent = qualities[parseInt(e.target.value) - 1];
         });
 
         resizeEnabled.addEventListener('change', (e) => {
@@ -1045,12 +1193,23 @@
             });
         });
 
+        function isVideoFile(file) {
+            return file.type.startsWith('video/');
+        }
+
+        function isImageFile(file) {
+            return file.type.startsWith('image/');
+        }
+
         function handleFileSelect(e) {
-            const files = Array.from(e.target.files).filter(file => file.type.startsWith('image/'));
+            const files = Array.from(e.target.files).filter(file => 
+                isImageFile(file) || isVideoFile(file)
+            );
+            
             if (files.length > 0) {
-                addImages(files);
+                addMediaFiles(files);
             } else {
-                showAlert('No valid image files found', 'warning');
+                showAlert('No valid image or video files found', 'warning');
             }
         }
 
@@ -1078,7 +1237,7 @@
                         if (entry) {
                             if (entry.isFile) {
                                 entry.file(file => {
-                                    if (file.type.startsWith('image/')) {
+                                    if (isImageFile(file) || isVideoFile(file)) {
                                         files.push(file);
                                     }
                                     resolve();
@@ -1088,7 +1247,7 @@
                             }
                         } else {
                             const file = item.getAsFile();
-                            if (file && file.type.startsWith('image/')) {
+                            if (file && (isImageFile(file) || isVideoFile(file))) {
                                 files.push(file);
                             }
                             resolve();
@@ -1101,9 +1260,9 @@
 
             Promise.all(promises).then(() => {
                 if (files.length > 0) {
-                    addImages(files);
+                    addMediaFiles(files);
                 } else {
-                    showAlert('No valid image files found', 'warning');
+                    showAlert('No valid media files found', 'warning');
                 }
             });
         }
@@ -1122,7 +1281,7 @@
                             return new Promise((resolveEntry) => {
                                 if (entry.isFile) {
                                     entry.file(file => {
-                                        if (file.type.startsWith('image/')) {
+                                        if (isImageFile(file) || isVideoFile(file)) {
                                             files.push(file);
                                         }
                                         resolveEntry();
@@ -1140,30 +1299,35 @@
             });
         }
 
-        function addImages(files) {
+        function addMediaFiles(files) {
+            const imageCount = files.filter(isImageFile).length;
+            const videoCount = files.filter(isVideoFile).length;
+
             files.forEach(file => {
-                const id = imageIdCounter++;
+                const id = mediaIdCounter++;
+                const mediaType = isVideoFile(file) ? 'video' : 'image';
                 const reader = new FileReader();
                 
                 reader.onload = function(e) {
-                    const imageData = {
+                    const mediaData = {
                         id: id,
                         file: file,
                         name: file.name,
                         size: file.size,
                         type: file.type,
+                        mediaType: mediaType,
                         originalDataUrl: e.target.result,
                         cleanedDataUrl: null,
                         cleanedBlob: null,
                         status: 'original',
                         metadata: {},
                         selected: true,
-                        settings: getDefaultSettings()
+                        settings: getDefaultSettings(mediaType)
                     };
 
-                    images.push(imageData);
-                    extractMetadata(imageData).then(() => {
-                        renderImage(imageData);
+                    mediaFiles.push(mediaData);
+                    extractMetadata(mediaData).then(() => {
+                        renderMedia(mediaData);
                         updateStats();
                     });
                     
@@ -1175,10 +1339,13 @@
                 reader.readAsDataURL(file);
             });
 
-            showAlert(`✅ ${files.length} image(s) loaded successfully!`, 'success');
+            showAlert(
+                `✅ ${files.length} file(s) loaded! (${imageCount} images, ${videoCount} videos)`, 
+                'success'
+            );
         }
 
-        function getDefaultSettings() {
+        function getDefaultSettings(mediaType) {
             return {
                 author: '',
                 copyright: '',
@@ -1192,44 +1359,71 @@
                 resizeValue: 100,
                 rotation: 0,
                 filter: 'none',
-                format: 'png'
+                format: mediaType === 'video' ? 'webm' : 'png',
+                videoQuality: 8,
+                videoBitrate: 2500000,
+                videoResolution: 'original',
+                stripAudio: false
             };
         }
 
-        function extractMetadata(imageData) {
+        function extractMetadata(mediaData) {
             return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const arrayBuffer = e.target.result;
-                    const view = new DataView(arrayBuffer);
+                mediaData.metadata = {
+                    'File Name': mediaData.name,
+                    'File Size': formatBytes(mediaData.size),
+                    'File Type': mediaData.type,
+                    'Media Type': mediaData.mediaType.toUpperCase()
+                };
+
+                if (mediaData.mediaType === 'video') {
+                    const video = document.createElement('video');
+                    video.preload = 'metadata';
                     
-                    imageData.metadata = {
-                        'File Name': imageData.name,
-                        'File Size': formatBytes(imageData.size),
-                        'File Type': imageData.type
-                    };
-
-                    // Check for JPEG
-                    if (view.getUint16(0, false) === 0xFFD8) {
-                        parseJPEGMetadata(view, imageData.metadata);
-                    } 
-                    // Check for PNG
-                    else if (view.getUint32(0, false) === 0x89504E47) {
-                        parsePNGMetadata(view, imageData.metadata);
-                    }
-
-                    // Get dimensions
-                    const img = new Image();
-                    img.onload = function() {
-                        imageData.metadata['Dimensions'] = `${img.width} × ${img.height}`;
-                        imageData.metadata['Aspect Ratio'] = (img.width / img.height).toFixed(3);
-                        imageData.width = img.width;
-                        imageData.height = img.height;
+                    video.onloadedmetadata = function() {
+                        mediaData.metadata['Duration'] = formatDuration(video.duration);
+                        mediaData.metadata['Dimensions'] = `${video.videoWidth} × ${video.videoHeight}`;
+                        mediaData.metadata['Aspect Ratio'] = (video.videoWidth / video.videoHeight).toFixed(3);
+                        mediaData.width = video.videoWidth;
+                        mediaData.height = video.videoHeight;
+                        mediaData.duration = video.duration;
                         resolve();
                     };
-                    img.src = imageData.originalDataUrl;
-                };
-                reader.readAsArrayBuffer(imageData.file);
+                    
+                    video.onerror = function() {
+                        mediaData.metadata['Error'] = 'Could not load video metadata';
+                        resolve();
+                    };
+                    
+                    video.src = mediaData.originalDataUrl;
+                } else {
+                    // Image metadata extraction
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const arrayBuffer = e.target.result;
+                        const view = new DataView(arrayBuffer);
+                        
+                        // Check for JPEG
+                        if (view.getUint16(0, false) === 0xFFD8) {
+                            parseJPEGMetadata(view, mediaData.metadata);
+                        } 
+                        // Check for PNG
+                        else if (view.getUint32(0, false) === 0x89504E47) {
+                            parsePNGMetadata(view, mediaData.metadata);
+                        }
+
+                        const img = new Image();
+                        img.onload = function() {
+                            mediaData.metadata['Dimensions'] = `${img.width} × ${img.height}`;
+                            mediaData.metadata['Aspect Ratio'] = (img.width / img.height).toFixed(3);
+                            mediaData.width = img.width;
+                            mediaData.height = img.height;
+                            resolve();
+                        };
+                        img.src = mediaData.originalDataUrl;
+                    };
+                    reader.readAsArrayBuffer(mediaData.file);
+                }
             });
         }
 
@@ -1272,104 +1466,131 @@
             }
         }
 
-        function renderImage(imageData) {
+        function renderMedia(mediaData) {
             const card = document.createElement('div');
-            card.className = 'image-card';
-            card.id = `image-${imageData.id}`;
+            card.className = 'media-card';
+            card.id = `media-${mediaData.id}`;
 
-            const metadataCount = Object.keys(imageData.metadata).length;
-            const metadataHtml = Object.entries(imageData.metadata).slice(0, 3).map(([key, value]) => `
+            const metadataCount = Object.keys(mediaData.metadata).length;
+            const metadataHtml = Object.entries(mediaData.metadata).slice(0, 3).map(([key, value]) => `
                 <div class="metadata-item-small">
                     <span class="metadata-key-small">${key}</span>
                     <span class="metadata-value-small">${value}</span>
                 </div>
             `).join('');
 
+            const previewHtml = mediaData.mediaType === 'video' 
+                ? `<video class="media-card-preview" src="${mediaData.originalDataUrl}" controls></video>`
+                : `<img class="media-card-preview" src="${mediaData.originalDataUrl}" alt="${mediaData.name}">`;
+
+            const badgeClass = mediaData.mediaType === 'video' ? 'badge-video' : 'badge-image';
+            const badgeIcon = mediaData.mediaType === 'video' ? '🎬' : '🖼️';
+
             card.innerHTML = `
-                <img class="image-card-preview" src="${imageData.originalDataUrl}" alt="${imageData.name}">
-                <div class="image-card-body">
+                ${previewHtml}
+                <div class="media-card-body">
                     <div class="checkbox-group" style="margin-bottom: 10px;">
-                        <input type="checkbox" id="select-${imageData.id}" ${imageData.selected ? 'checked' : ''} 
-                               onchange="toggleImageSelection(${imageData.id})">
-                        <label for="select-${imageData.id}" class="image-card-title" title="${imageData.name}">
-                            ${imageData.name}
+                        <input type="checkbox" id="select-${mediaData.id}" ${mediaData.selected ? 'checked' : ''} 
+                               onchange="toggleMediaSelection(${mediaData.id})">
+                        <label for="select-${mediaData.id}" class="media-card-title" title="${mediaData.name}">
+                            ${mediaData.name}
                         </label>
+                        <span class="media-type-badge ${badgeClass}">${badgeIcon} ${mediaData.mediaType}</span>
                     </div>
-                    <div class="image-card-info">
-                        ${formatBytes(imageData.size)} • ${imageData.type.split('/')[1].toUpperCase()}
+                    <div class="media-card-info">
+                        ${formatBytes(mediaData.size)} • ${mediaData.type.split('/')[1].toUpperCase()}
+                        ${mediaData.duration ? ` • ${formatDuration(mediaData.duration)}` : ''}
                     </div>
-                    <div class="image-card-info">
-                        ${imageData.width} × ${imageData.height} px • ${metadataCount} metadata fields
+                    <div class="media-card-info">
+                        ${mediaData.width} × ${mediaData.height} px • ${metadataCount} metadata fields
                     </div>
-                    <span class="image-card-status status-${imageData.status}" id="status-${imageData.id}">
-                        ${imageData.status === 'original' ? '📋 Original' : '✓ Cleaned'}
+                    <span class="media-card-status status-${mediaData.status}" id="status-${mediaData.id}">
+                        ${mediaData.status === 'original' ? '📋 Original' : '✓ Processed'}
                     </span>
                     <div class="metadata-preview">
                         ${metadataHtml}
                     </div>
-                    <div class="image-card-actions">
-                        <button class="btn btn-danger btn-small" onclick="cleanSingleImage(${imageData.id})">
-                            🗑️ Clean
+                    <div class="media-card-actions">
+                        <button class="btn btn-danger btn-small" onclick="processSingleMedia(${mediaData.id})">
+                            🗑️ Process
                         </button>
-                        <button class="btn btn-info btn-small" onclick="viewMetadata(${imageData.id})">
-                            📋 View
+                        <button class="btn btn-info btn-small" onclick="viewMetadata(${mediaData.id})">
+                            📋 Metadata
                         </button>
-                        <button class="btn btn-primary btn-small" onclick="compareImage(${imageData.id})">
-                            🔍 Compare
-                        </button>
-                        <button class="btn btn-success btn-small" onclick="downloadSingleImage(${imageData.id})">
-                            ⬇️
+                        <button class="btn btn-success btn-small" onclick="downloadSingleMedia(${mediaData.id})">
+                            ⬇️ Download
                         </button>
                     </div>
                 </div>
             `;
 
-            imagesGrid.appendChild(card);
+            mediaGrid.appendChild(card);
         }
 
-        function toggleImageSelection(id) {
-            const imageData = images.find(img => img.id === id);
-            if (imageData) {
-                imageData.selected = !imageData.selected;
+        function toggleMediaSelection(id) {
+            const mediaData = mediaFiles.find(m => m.id === id);
+            if (mediaData) {
+                mediaData.selected = !mediaData.selected;
             }
         }
 
         function selectAll() {
-            images.forEach(img => {
-                img.selected = true;
-                const checkbox = document.getElementById(`select-${img.id}`);
+            mediaFiles.forEach(m => {
+                m.selected = true;
+                const checkbox = document.getElementById(`select-${m.id}`);
                 if (checkbox) checkbox.checked = true;
             });
-            showAlert('✓ All images selected', 'info');
+            showAlert('✓ All files selected', 'info');
         }
 
         function deselectAll() {
-            images.forEach(img => {
-                img.selected = false;
-                const checkbox = document.getElementById(`select-${img.id}`);
+            mediaFiles.forEach(m => {
+                m.selected = false;
+                const checkbox = document.getElementById(`select-${m.id}`);
                 if (checkbox) checkbox.checked = false;
             });
-            showAlert('✗ All images deselected', 'info');
+            showAlert('✗ All files deselected', 'info');
         }
 
-        function updateImageCard(imageData) {
-            const statusEl = document.getElementById(`status-${imageData.id}`);
+        function updateMediaCard(mediaData) {
+            const statusEl = document.getElementById(`status-${mediaData.id}`);
             if (statusEl) {
-                statusEl.className = `image-card-status status-${imageData.status}`;
-                statusEl.textContent = imageData.status === 'cleaned' ? '✓ Cleaned' : 
-                                     imageData.status === 'processing' ? '⏳ Processing...' : '📋 Original';
+                statusEl.className = `media-card-status status-${mediaData.status}`;
+                statusEl.textContent = mediaData.status === 'cleaned' ? '✓ Processed' : 
+                                     mediaData.status === 'processing' ? '⏳ Processing...' : '📋 Original';
             }
         }
 
-        async function cleanSingleImage(id) {
-            const imageData = images.find(img => img.id === id);
-            if (!imageData) return;
+        async function processSingleMedia(id) {
+            const mediaData = mediaFiles.find(m => m.id === id);
+            if (!mediaData) return;
 
-            imageData.status = 'processing';
-            updateImageCard(imageData);
+            mediaData.status = 'processing';
+            updateMediaCard(mediaData);
 
-            // Get current settings
-            const settings = {
+            const settings = getCurrentSettings(mediaData.mediaType);
+            
+            try {
+                if (mediaData.mediaType === 'video') {
+                    await processVideo(mediaData, settings);
+                } else {
+                    await processImage(mediaData, settings);
+                }
+                
+                mediaData.status = 'cleaned';
+                updateMediaCard(mediaData);
+                updateStats();
+                
+                showAlert(`✅ ${mediaData.mediaType === 'video' ? 'Video' : 'Image'} "${mediaData.name}" processed successfully!`, 'success');
+            } catch (error) {
+                mediaData.status = 'original';
+                updateMediaCard(mediaData);
+                showAlert(`❌ Error processing "${mediaData.name}": ${error.message}`, 'warning');
+            }
+        }
+
+        function getCurrentSettings(mediaType) {
+            return {
                 author: authorInput.value.trim(),
                 copyright: copyrightInput.value.trim(),
                 title: titleInput.value.trim(),
@@ -1382,22 +1603,290 @@
                 resizeValue: parseInt(resizeValue.value) || 100,
                 rotation: parseInt(rotationSelect.value),
                 filter: filterSelect.value,
-                format: outputFormat.value === 'original' ? imageData.type.split('/')[1] : outputFormat.value
+                format: mediaType === 'video' 
+                    ? (videoFormat.value === 'original' ? 'webm' : videoFormat.value)
+                    : (imageFormat.value === 'original' ? 'png' : imageFormat.value),
+                videoQuality: parseInt(videoQualitySlider.value),
+                videoBitrate: videoBitrate.value === 'auto' ? undefined : parseInt(videoBitrate.value),
+                videoResolution: videoResolution.value,
+                stripAudio: videoStripAudio.checked
             };
-            
-            await processImage(imageData, settings);
-            
-            imageData.status = 'cleaned';
-            updateImageCard(imageData);
-            updateStats();
-            
-            showAlert(`✅ Image "${imageData.name}" processed successfully!`, 'success');
         }
 
-        async function cleanAllImages() {
-            const selectedImages = images.filter(img => img.selected);
-            if (selectedImages.length === 0) {
-                showAlert('⚠️ No images selected. Please select images to process.', 'warning');
+        function processImage(mediaData, settings) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = function() {
+                    try {
+                        let width = img.width;
+                        let height = img.height;
+
+                        // Apply resize
+                        if (settings.resize) {
+                            switch (settings.resizeMode) {
+                                case 'percent':
+                                    width = Math.round(width * settings.resizeValue / 100);
+                                    height = Math.round(height * settings.resizeValue / 100);
+                                    break;
+                                case 'width':
+                                    height = Math.round(height * settings.resizeValue / width);
+                                    width = settings.resizeValue;
+                                    break;
+                                case 'height':
+                                    width = Math.round(width * settings.resizeValue / height);
+                                    height = settings.resizeValue;
+                                    break;
+                                case 'max':
+                                    const maxDim = Math.max(width, height);
+                                    if (maxDim > settings.resizeValue) {
+                                        const scale = settings.resizeValue / maxDim;
+                                        width = Math.round(width * scale);
+                                        height = Math.round(height * scale);
+                                    }
+                                    break;
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        
+                        // Handle rotation
+                        if (settings.rotation === 90 || settings.rotation === 270) {
+                            canvas.width = height;
+                            canvas.height = width;
+                        } else {
+                            canvas.width = width;
+                            canvas.height = height;
+                        }
+
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Apply rotation
+                        if (settings.rotation) {
+                            ctx.translate(canvas.width / 2, canvas.height / 2);
+                            ctx.rotate((settings.rotation * Math.PI) / 180);
+                            ctx.translate(-width / 2, -height / 2);
+                        }
+
+                        // Draw image
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Apply filters
+                        if (settings.filter !== 'none') {
+                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                            const data = imageData.data;
+
+                            switch (settings.filter) {
+                                case 'grayscale':
+                                    for (let i = 0; i < data.length; i += 4) {
+                                        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                                        data[i] = data[i + 1] = data[i + 2] = avg;
+                                    }
+                                    break;
+                                case 'sepia':
+                                    for (let i = 0; i < data.length; i += 4) {
+                                        const r = data[i], g = data[i + 1], b = data[i + 2];
+                                        data[i] = Math.min(255, r * 0.393 + g * 0.769 + b * 0.189);
+                                        data[i + 1] = Math.min(255, r * 0.349 + g * 0.686 + b * 0.168);
+                                        data[i + 2] = Math.min(255, r * 0.272 + g * 0.534 + b * 0.131);
+                                    }
+                                    break;
+                                case 'invert':
+                                    for (let i = 0; i < data.length; i += 4) {
+                                        data[i] = 255 - data[i];
+                                        data[i + 1] = 255 - data[i + 1];
+                                        data[i + 2] = 255 - data[i + 2];
+                                    }
+                                    break;
+                                case 'brightness':
+                                    for (let i = 0; i < data.length; i += 4) {
+                                        data[i] = Math.min(255, data[i] * 1.2);
+                                        data[i + 1] = Math.min(255, data[i + 1] * 1.2);
+                                        data[i + 2] = Math.min(255, data[i + 2] * 1.2);
+                                    }
+                                    break;
+                                case 'contrast':
+                                    const factor = (259 * (128 + 255)) / (255 * (259 - 128));
+                                    for (let i = 0; i < data.length; i += 4) {
+                                        data[i] = Math.min(255, Math.max(0, factor * (data[i] - 128) + 128));
+                                        data[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128));
+                                        data[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128));
+                                    }
+                                    break;
+                            }
+
+                            ctx.putImageData(imageData, 0, 0);
+                        }
+
+                        // Save settings
+                        mediaData.settings = settings;
+                        updateMetadataFromSettings(mediaData, settings);
+
+                        // Convert to blob
+                        const mimeType = `image/${settings.format}`;
+                        const quality = settings.quality / 100;
+
+                        canvas.toBlob(function(blob) {
+                            if (!blob) {
+                                reject(new Error('Failed to create blob'));
+                                return;
+                            }
+                            
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                mediaData.cleanedDataUrl = e.target.result;
+                                mediaData.cleanedBlob = blob;
+                                resolve();
+                            };
+                            reader.readAsDataURL(blob);
+                        }, mimeType, quality);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                img.onerror = () => reject(new Error('Failed to load image'));
+                img.src = mediaData.originalDataUrl;
+            });
+        }
+
+        function processVideo(mediaData, settings) {
+            return new Promise((resolve, reject) => {
+                const video = document.createElement('video');
+                video.src = mediaData.originalDataUrl;
+                video.muted = true;
+                
+                video.onloadedmetadata = async function() {
+                    try {
+                        let width = video.videoWidth;
+                        let height = video.videoHeight;
+
+                        // Apply resolution scaling
+                        if (settings.videoResolution !== 'original') {
+                            const targetHeight = parseInt(settings.videoResolution);
+                            const scale = targetHeight / height;
+                            width = Math.round(width * scale);
+                            height = targetHeight;
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+
+                        // Create MediaRecorder
+                        const stream = canvas.captureStream(30); // 30 FPS
+                        
+                        if (!settings.stripAudio && video.captureStream) {
+                            try {
+                                const videoStream = video.captureStream();
+                                const audioTracks = videoStream.getAudioTracks();
+                                if (audioTracks.length > 0) {
+                                    audioTracks.forEach(track => stream.addTrack(track));
+                                }
+                            } catch (e) {
+                                console.log('Could not capture audio:', e);
+                            }
+                        }
+
+                        const mimeType = settings.format === 'mp4' 
+                            ? 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"'
+                            : 'video/webm; codecs=vp9';
+
+                        // Check if MIME type is supported
+                        const finalMimeType = MediaRecorder.isTypeSupported(mimeType) 
+                            ? mimeType 
+                            : 'video/webm';
+
+                        const options = {
+                            mimeType: finalMimeType,
+                            videoBitsPerSecond: settings.videoBitrate
+                        };
+
+                        const mediaRecorder = new MediaRecorder(stream, options);
+                        const chunks = [];
+
+                        mediaRecorder.ondataavailable = (e) => {
+                            if (e.data.size > 0) {
+                                chunks.push(e.data);
+                            }
+                        };
+
+                        mediaRecorder.onstop = () => {
+                            const blob = new Blob(chunks, { type: finalMimeType });
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                mediaData.cleanedDataUrl = e.target.result;
+                                mediaData.cleanedBlob = blob;
+                                mediaData.settings = settings;
+                                updateMetadataFromSettings(mediaData, settings);
+                                resolve();
+                            };
+                            reader.readAsDataURL(blob);
+                        };
+
+                        mediaRecorder.onerror = (e) => {
+                            reject(new Error('MediaRecorder error: ' + e.error));
+                        };
+
+                        // Start recording
+                        mediaRecorder.start(100); // Capture data every 100ms
+
+                        // Play video and draw frames
+                        video.play();
+                        
+                        const drawFrame = () => {
+                            if (!video.paused && !video.ended) {
+                                ctx.drawImage(video, 0, 0, width, height);
+                                requestAnimationFrame(drawFrame);
+                            }
+                        };
+
+                        video.onplay = () => {
+                            drawFrame();
+                        };
+
+                        video.onended = () => {
+                            setTimeout(() => {
+                                mediaRecorder.stop();
+                                stream.getTracks().forEach(track => track.stop());
+                            }, 500);
+                        };
+
+                        // Set timeout for long videos
+                        setTimeout(() => {
+                            if (mediaRecorder.state === 'recording') {
+                                video.pause();
+                                mediaRecorder.stop();
+                                stream.getTracks().forEach(track => track.stop());
+                            }
+                        }, Math.min(video.duration * 1000 + 5000, 300000)); // Max 5 minutes
+
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+
+                video.onerror = () => reject(new Error('Failed to load video'));
+            });
+        }
+
+        function updateMetadataFromSettings(mediaData, settings) {
+            if (settings.author) mediaData.metadata['Author'] = settings.author;
+            if (settings.copyright) mediaData.metadata['Copyright'] = settings.copyright;
+            if (settings.title) mediaData.metadata['Title'] = settings.title;
+            if (settings.keywords) mediaData.metadata['Keywords'] = settings.keywords;
+            if (settings.description) mediaData.metadata['Description'] = settings.description;
+            if (settings.credit) mediaData.metadata['Credit'] = settings.credit;
+        }
+
+        async function processAllMedia(typeFilter = null) {
+            let selectedMedia = mediaFiles.filter(m => m.selected);
+            
+            if (typeFilter) {
+                selectedMedia = selectedMedia.filter(m => m.mediaType === typeFilter);
+            }
+            
+            if (selectedMedia.length === 0) {
+                showAlert(`⚠️ No ${typeFilter || 'media'} files selected.`, 'warning');
                 return;
             }
 
@@ -1407,217 +1896,86 @@
             cleanAllBtn.innerHTML = '<span class="loading-spinner"></span> Processing...';
             topCleanAllBtn.innerHTML = '<span class="loading-spinner"></span> Processing...';
 
-            const settings = {
-                author: authorInput.value.trim(),
-                copyright: copyrightInput.value.trim(),
-                title: titleInput.value.trim(),
-                keywords: keywordsInput.value.trim(),
-                description: descriptionInput.value.trim(),
-                credit: creditInput.value.trim(),
-                quality: parseInt(qualitySlider.value),
-                resize: resizeEnabled.checked,
-                resizeMode: resizeMode.value,
-                resizeValue: parseInt(resizeValue.value) || 100,
-                rotation: parseInt(rotationSelect.value),
-                filter: filterSelect.value,
-                format: outputFormat.value
-            };
-
             let processed = 0;
-            const total = selectedImages.length;
+            const total = selectedMedia.length;
+            let errors = 0;
 
-            for (const imageData of selectedImages) {
-                imageData.status = 'processing';
-                updateImageCard(imageData);
+            for (const mediaData of selectedMedia) {
+                mediaData.status = 'processing';
+                updateMediaCard(mediaData);
                 
-                await processImage(imageData, settings);
+                const settings = getCurrentSettings(mediaData.mediaType);
                 
-                imageData.status = 'cleaned';
-                updateImageCard(imageData);
+                try {
+                    if (mediaData.mediaType === 'video') {
+                        await processVideo(mediaData, settings);
+                    } else {
+                        await processImage(mediaData, settings);
+                    }
+                    
+                    mediaData.status = 'cleaned';
+                } catch (error) {
+                    console.error('Processing error:', error);
+                    mediaData.status = 'original';
+                    errors++;
+                }
+                
+                updateMediaCard(mediaData);
                 
                 processed++;
                 const progress = (processed / total) * 100;
                 progressFill.style.width = `${progress}%`;
                 
-                await new Promise(resolve => setTimeout(resolve, 50));
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
 
             progressBar.style.display = 'none';
             progressFill.style.width = '0%';
             cleanAllBtn.disabled = false;
             topCleanAllBtn.disabled = false;
-            cleanAllBtn.innerHTML = '🗑️ Clean All';
-            topCleanAllBtn.innerHTML = '🗑️ Clean All';
+            cleanAllBtn.innerHTML = '🗑️ Process All Media';
+            topCleanAllBtn.innerHTML = '🗑️ Process All';
             
             updateStats();
-            showAlert(`✅ All ${total} selected image(s) processed successfully!`, 'success');
+            
+            const successCount = total - errors;
+            if (errors > 0) {
+                showAlert(`⚠️ Processed ${successCount}/${total} files. ${errors} failed.`, 'warning');
+            } else {
+                showAlert(`✅ All ${total} selected file(s) processed successfully!`, 'success');
+            }
         }
 
-        async function applySettingsToAll() {
-            await cleanAllImages();
-        }
-
-        function resetAllImages() {
-            if (!confirm('Are you sure you want to reset all images to their original state?')) {
+        function resetAllMedia() {
+            if (!confirm('Are you sure you want to reset all media to original state?')) {
                 return;
             }
 
-            images.forEach(img => {
-                img.status = 'original';
-                img.cleanedDataUrl = null;
-                img.cleanedBlob = null;
-                updateImageCard(img);
+            mediaFiles.forEach(m => {
+                m.status = 'original';
+                m.cleanedDataUrl = null;
+                m.cleanedBlob = null;
+                updateMediaCard(m);
             });
 
             updateStats();
-            showAlert('🔄 All images reset to original state', 'info');
+            showAlert('🔄 All media reset to original state', 'info');
         }
 
-        function processImage(imageData, settings) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = function() {
-                    let width = img.width;
-                    let height = img.height;
+        function downloadSingleMedia(id) {
+            const mediaData = mediaFiles.find(m => m.id === id);
+            if (!mediaData) return;
 
-                    // Apply resize
-                    if (settings.resize) {
-                        switch (settings.resizeMode) {
-                            case 'percent':
-                                width = Math.round(width * settings.resizeValue / 100);
-                                height = Math.round(height * settings.resizeValue / 100);
-                                break;
-                            case 'width':
-                                height = Math.round(height * settings.resizeValue / width);
-                                width = settings.resizeValue;
-                                break;
-                            case 'height':
-                                width = Math.round(width * settings.resizeValue / height);
-                                height = settings.resizeValue;
-                                break;
-                            case 'max':
-                                const maxDim = Math.max(width, height);
-                                if (maxDim > settings.resizeValue) {
-                                    const scale = settings.resizeValue / maxDim;
-                                    width = Math.round(width * scale);
-                                    height = Math.round(height * scale);
-                                }
-                                break;
-                        }
-                    }
-
-                    const canvas = document.createElement('canvas');
-                    
-                    // Handle rotation
-                    if (settings.rotation === 90 || settings.rotation === 270) {
-                        canvas.width = height;
-                        canvas.height = width;
-                    } else {
-                        canvas.width = width;
-                        canvas.height = height;
-                    }
-
-                    const ctx = canvas.getContext('2d');
-                    
-                    // Apply rotation
-                    if (settings.rotation) {
-                        ctx.translate(canvas.width / 2, canvas.height / 2);
-                        ctx.rotate((settings.rotation * Math.PI) / 180);
-                        ctx.translate(-width / 2, -height / 2);
-                    }
-
-                    // Draw image
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    // Apply filters
-                    if (settings.filter !== 'none') {
-                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                        const data = imageData.data;
-
-                        switch (settings.filter) {
-                            case 'grayscale':
-                                for (let i = 0; i < data.length; i += 4) {
-                                    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                                    data[i] = data[i + 1] = data[i + 2] = avg;
-                                }
-                                break;
-                            case 'sepia':
-                                for (let i = 0; i < data.length; i += 4) {
-                                    const r = data[i], g = data[i + 1], b = data[i + 2];
-                                    data[i] = Math.min(255, r * 0.393 + g * 0.769 + b * 0.189);
-                                    data[i + 1] = Math.min(255, r * 0.349 + g * 0.686 + b * 0.168);
-                                    data[i + 2] = Math.min(255, r * 0.272 + g * 0.534 + b * 0.131);
-                                }
-                                break;
-                            case 'invert':
-                                for (let i = 0; i < data.length; i += 4) {
-                                    data[i] = 255 - data[i];
-                                    data[i + 1] = 255 - data[i + 1];
-                                    data[i + 2] = 255 - data[i + 2];
-                                }
-                                break;
-                            case 'brightness':
-                                for (let i = 0; i < data.length; i += 4) {
-                                    data[i] = Math.min(255, data[i] * 1.2);
-                                    data[i + 1] = Math.min(255, data[i + 1] * 1.2);
-                                    data[i + 2] = Math.min(255, data[i + 2] * 1.2);
-                                }
-                                break;
-                            case 'contrast':
-                                const factor = (259 * (128 + 255)) / (255 * (259 - 128));
-                                for (let i = 0; i < data.length; i += 4) {
-                                    data[i] = Math.min(255, Math.max(0, factor * (data[i] - 128) + 128));
-                                    data[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128));
-                                    data[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128));
-                                }
-                                break;
-                        }
-
-                        ctx.putImageData(imageData, 0, 0);
-                    }
-
-                    // Save metadata for reference
-                    imageData.settings = settings;
-                    if (settings.author) imageData.metadata['Author'] = settings.author;
-                    if (settings.copyright) imageData.metadata['Copyright'] = settings.copyright;
-                    if (settings.title) imageData.metadata['Title'] = settings.title;
-                    if (settings.keywords) imageData.metadata['Keywords'] = settings.keywords;
-                    if (settings.description) imageData.metadata['Description'] = settings.description;
-                    if (settings.credit) imageData.metadata['Credit'] = settings.credit;
-
-                    // Convert to blob
-                    const format = settings.format === 'original' ? imageData.type.split('/')[1] : settings.format;
-                    const mimeType = `image/${format}`;
-                    const quality = settings.quality / 100;
-
-                    canvas.toBlob(function(blob) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            imageData.cleanedDataUrl = e.target.result;
-                            imageData.cleanedBlob = blob;
-                            resolve();
-                        };
-                        reader.readAsDataURL(blob);
-                    }, mimeType, quality);
-                };
-                img.src = imageData.originalDataUrl;
-            });
-        }
-
-        function downloadSingleImage(id) {
-            const imageData = images.find(img => img.id === id);
-            if (!imageData) return;
-
-            if (!imageData.cleanedBlob) {
-                showAlert('⚠️ Please process the image first!', 'warning');
+            if (!mediaData.cleanedBlob) {
+                showAlert('⚠️ Please process the media first!', 'warning');
                 return;
             }
 
-            const url = URL.createObjectURL(imageData.cleanedBlob);
+            const url = URL.createObjectURL(mediaData.cleanedBlob);
             const a = document.createElement('a');
             a.href = url;
             
-            const fileName = generateFilename(imageData);
+            const fileName = generateFilename(mediaData);
             a.download = fileName;
             
             document.body.appendChild(a);
@@ -1628,32 +1986,33 @@
             showAlert(`⬇️ "${fileName}" downloaded!`, 'success');
         }
 
-        function generateFilename(imageData) {
-            const pattern = filenamePattern.value || 'clean_{original}';
-            const baseName = imageData.name.replace(/\.[^/.]+$/, "");
-            const ext = imageData.settings?.format || 'png';
+        function generateFilename(mediaData) {
+            const pattern = document.getElementById('filenamePattern').value || 'clean_{original}';
+            const baseName = mediaData.name.replace(/\.[^/.]+$/, "");
+            const ext = mediaData.settings?.format || (mediaData.mediaType === 'video' ? 'webm' : 'png');
             const date = new Date().toISOString().split('T')[0];
-            const index = imageData.id;
+            const index = mediaData.id;
 
             let filename = pattern
                 .replace('{original}', baseName)
-                .replace('{author}', imageData.settings?.author || '')
+                .replace('{author}', mediaData.settings?.author || '')
                 .replace('{date}', date)
-                .replace('{index}', index);
+                .replace('{index}', index)
+                .replace('{type}', mediaData.mediaType);
 
             return `${filename}.${ext}`;
         }
 
-        async function downloadAllImages() {
-            const cleanedImages = images.filter(img => img.cleanedBlob && img.selected);
+        async function downloadAllMedia() {
+            const processedMedia = mediaFiles.filter(m => m.cleanedBlob && m.selected);
             
-            if (cleanedImages.length === 0) {
-                showAlert('⚠️ Please process at least one selected image first!', 'warning');
+            if (processedMedia.length === 0) {
+                showAlert('⚠️ Please process at least one selected file first!', 'warning');
                 return;
             }
 
-            if (cleanedImages.length === 1) {
-                downloadSingleImage(cleanedImages[0].id);
+            if (processedMedia.length === 1) {
+                downloadSingleMedia(processedMedia[0].id);
                 return;
             }
 
@@ -1663,37 +2022,44 @@
             topDownloadAllBtn.innerHTML = '<span class="loading-spinner"></span> Creating ZIP...';
             
             const zip = new JSZip();
-            const folder = zip.folder('cleaned_images');
+            const separateByType = document.getElementById('separateByType').checked;
 
-            // Add images
-            cleanedImages.forEach(imageData => {
-                const fileName = generateFilename(imageData);
-                folder.file(fileName, imageData.cleanedBlob);
+            // Organize files
+            processedMedia.forEach(mediaData => {
+                const fileName = generateFilename(mediaData);
+                
+                if (separateByType) {
+                    const folderName = mediaData.mediaType === 'video' ? 'videos' : 'images';
+                    zip.folder(folderName).file(fileName, mediaData.cleanedBlob);
+                } else {
+                    zip.file(fileName, mediaData.cleanedBlob);
+                }
             });
 
             // Add metadata CSV if enabled
             if (document.getElementById('exportMetadataFile').checked) {
-                let csv = 'Filename,Original Size,Processed Size,Dimensions,Author,Title,Keywords\n';
-                cleanedImages.forEach(imageData => {
-                    const fileName = generateFilename(imageData);
-                    csv += `"${fileName}","${formatBytes(imageData.size)}","${formatBytes(imageData.cleanedBlob.size)}",` +
-                           `"${imageData.width}x${imageData.height}","${imageData.settings?.author || ''}",` +
-                           `"${imageData.settings?.title || ''}","${imageData.settings?.keywords || ''}"\n`;
+                let csv = 'Filename,Type,Original Size,Processed Size,Dimensions,Duration,Author,Title\n';
+                processedMedia.forEach(mediaData => {
+                    const fileName = generateFilename(mediaData);
+                    csv += `"${fileName}","${mediaData.mediaType}","${formatBytes(mediaData.size)}",` +
+                           `"${formatBytes(mediaData.cleanedBlob.size)}","${mediaData.width}x${mediaData.height}",` +
+                           `"${mediaData.duration ? formatDuration(mediaData.duration) : 'N/A'}",` +
+                           `"${mediaData.settings?.author || ''}","${mediaData.settings?.title || ''}"\n`;
                 });
-                folder.file('metadata_report.csv', csv);
+                zip.file('metadata_report.csv', csv);
             }
 
             // Add README if enabled
             if (document.getElementById('exportReadme').checked) {
-                const readme = generateReadme(cleanedImages);
-                folder.file('README.txt', readme);
+                const readme = generateReadme(processedMedia);
+                zip.file('README.txt', readme);
             }
 
             zip.generateAsync({ type: 'blob' }).then(function(content) {
                 const url = URL.createObjectURL(content);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `cleaned_images_${Date.now()}.zip`;
+                a.download = `processed_media_${Date.now()}.zip`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -1704,47 +2070,72 @@
                 downloadAllBtn.innerHTML = '⬇️ Download All (ZIP)';
                 topDownloadAllBtn.innerHTML = '⬇️ Download All as ZIP';
                 
-                showAlert(`⬇️ ZIP file with ${cleanedImages.length} processed images downloaded!`, 'success');
+                const imageCount = processedMedia.filter(m => m.mediaType === 'image').length;
+                const videoCount = processedMedia.filter(m => m.mediaType === 'video').length;
+                
+                showAlert(
+                    `⬇️ ZIP downloaded! ${imageCount} images, ${videoCount} videos`, 
+                    'success'
+                );
             });
         }
 
-        function generateReadme(images) {
-            const settings = images[0]?.settings || {};
-            return `Processed Images - Metadata Report
-=====================================
+        function generateReadme(mediaFiles) {
+            const imageCount = mediaFiles.filter(m => m.mediaType === 'image').length;
+            const videoCount = mediaFiles.filter(m => m.mediaType === 'video').length;
+            const settings = mediaFiles[0]?.settings || {};
+            
+            return `Processed Media Files - Metadata Report
+=========================================
 
-Total images: ${images.length}
+Total files: ${mediaFiles.length}
+Images: ${imageCount}
+Videos: ${videoCount}
 Processed on: ${new Date().toLocaleString()}
 
 Settings Applied:
 -----------------
 ${settings.author ? `Author: ${settings.author}` : 'Author: Not specified'}
 ${settings.copyright ? `Copyright: ${settings.copyright}` : ''}
-${settings.title ? `Title Template: ${settings.title}` : ''}
+${settings.title ? `Title: ${settings.title}` : ''}
 ${settings.keywords ? `Keywords: ${settings.keywords}` : ''}
+
+Image Settings:
 Quality: ${settings.quality}%
 Format: ${settings.format}
-${settings.resize ? `Resize: ${settings.resizeMode} - ${settings.resizeValue}` : 'Resize: Disabled'}
-${settings.rotation ? `Rotation: ${settings.rotation}°` : ''}
-${settings.filter !== 'none' ? `Filter: ${settings.filter}` : ''}
+
+Video Settings:
+Quality Level: ${settings.videoQuality}/10
+Bitrate: ${settings.videoBitrate ? (settings.videoBitrate / 1000000) + ' Mbps' : 'Auto'}
+Resolution: ${settings.videoResolution}
+Audio: ${settings.stripAudio ? 'Stripped' : 'Preserved (if possible)'}
 
 Metadata Status:
 ----------------
-All original metadata has been removed.
-${settings.author || settings.copyright || settings.title ? 'New metadata fields added as specified above.' : 'Images are completely clean with zero metadata.'}
+ALL original metadata has been completely removed including:
+- EXIF data (GPS, camera info, timestamps)
+- File creation/modification dates
+- Camera settings and device information
+- Software/application metadata
+- Embedded thumbnails
+- Color profiles
+- Comments and annotations
+
+${settings.author || settings.copyright || settings.title ? 'New metadata fields added as specified above.' : 'Files are completely clean with zero metadata.'}
 
 Files Included:
 ---------------
-${images.map((img, i) => `${i + 1}. ${generateFilename(img)} (${formatBytes(img.cleanedBlob.size)})`).join('\n')}
+${mediaFiles.map((m, i) => `${i + 1}. ${generateFilename(m)} (${m.mediaType.toUpperCase()}, ${formatBytes(m.cleanedBlob.size)})`).join('\n')}
 
 ---
-Generated by Advanced Image Metadata Cleaner
+Generated by Universal Media Metadata Cleaner
+Supports both images and videos with complete metadata removal
 `;
         }
 
         function viewMetadata(id) {
-            const imageData = images.find(img => img.id === id);
-            if (!imageData) return;
+            const mediaData = mediaFiles.find(m => m.id === id);
+            if (!mediaData) return;
 
             const modal = document.getElementById('metadataModal');
             const content = document.getElementById('modalMetadataContent');
@@ -1752,35 +2143,28 @@ Generated by Advanced Image Metadata Cleaner
             let html = '<h3>Original Metadata</h3>';
             html += '<div class="metadata-display">';
             
-            if (Object.keys(imageData.metadata).length === 0) {
-                html += '<div class="no-metadata">No metadata found</div>';
-            } else {
-                for (const [key, value] of Object.entries(imageData.metadata)) {
-                    html += `
-                        <div class="metadata-item">
-                            <span class="metadata-key">${key}</span>
-                            <span class="metadata-value">${value}</span>
-                        </div>
-                    `;
-                }
+            for (const [key, value] of Object.entries(mediaData.metadata)) {
+                html += `
+                    <div class="metadata-item">
+                        <span class="metadata-key">${key}</span>
+                        <span class="metadata-value">${value}</span>
+                    </div>
+                `;
             }
             
             html += '</div>';
 
-            if (imageData.cleanedBlob) {
+            if (mediaData.cleanedBlob) {
                 html += '<h3 style="margin-top: 20px;">Applied Settings</h3>';
                 html += '<div class="metadata-display">';
-                const settings = imageData.settings;
+                const settings = mediaData.settings;
                 
                 if (settings.author) html += `<div class="metadata-item"><span class="metadata-key">Author</span><span class="metadata-value">${settings.author}</span></div>`;
                 if (settings.copyright) html += `<div class="metadata-item"><span class="metadata-key">Copyright</span><span class="metadata-value">${settings.copyright}</span></div>`;
                 if (settings.title) html += `<div class="metadata-item"><span class="metadata-key">Title</span><span class="metadata-value">${settings.title}</span></div>`;
-                if (settings.keywords) html += `<div class="metadata-item"><span class="metadata-key">Keywords</span><span class="metadata-value">${settings.keywords}</span></div>`;
-                if (settings.description) html += `<div class="metadata-item"><span class="metadata-key">Description</span><span class="metadata-value">${settings.description}</span></div>`;
                 
-                html += `<div class="metadata-item"><span class="metadata-key">Quality</span><span class="metadata-value">${settings.quality}%</span></div>`;
+                html += `<div class="metadata-item"><span class="metadata-key">Processed Size</span><span class="metadata-value">${formatBytes(mediaData.cleanedBlob.size)}</span></div>`;
                 html += `<div class="metadata-item"><span class="metadata-key">Format</span><span class="metadata-value">${settings.format.toUpperCase()}</span></div>`;
-                html += `<div class="metadata-item"><span class="metadata-key">File Size</span><span class="metadata-value">${formatBytes(imageData.cleanedBlob.size)}</span></div>`;
                 
                 html += '</div>';
             }
@@ -1793,67 +2177,28 @@ Generated by Advanced Image Metadata Cleaner
             document.getElementById('metadataModal').classList.remove('show');
         }
 
-        function compareImage(id) {
-            const imageData = images.find(img => img.id === id);
-            if (!imageData) return;
-
-            const modal = document.getElementById('comparisonModal');
-            const content = document.getElementById('comparisonContent');
-
-            const originalSize = formatBytes(imageData.size);
-            const cleanedSize = imageData.cleanedBlob ? formatBytes(imageData.cleanedBlob.size) : 'N/A';
-            const sizeDiff = imageData.cleanedBlob ? 
-                formatBytes(imageData.size - imageData.cleanedBlob.size) : 'N/A';
-
-            content.innerHTML = `
-                <div class="comparison-side">
-                    <h3>Original</h3>
-                    <img src="${imageData.originalDataUrl}" alt="Original">
-                    <p style="margin-top: 10px; color: #666;">
-                        Size: ${originalSize}<br>
-                        Metadata: ${Object.keys(imageData.metadata).length} fields
-                    </p>
-                </div>
-                <div class="comparison-side">
-                    <h3>Processed</h3>
-                    ${imageData.cleanedDataUrl ? 
-                        `<img src="${imageData.cleanedDataUrl}" alt="Processed">
-                         <p style="margin-top: 10px; color: #666;">
-                            Size: ${cleanedSize}<br>
-                            Saved: ${sizeDiff}<br>
-                            ${imageData.settings?.author ? `Author: ${imageData.settings.author}` : 'No metadata'}
-                         </p>` :
-                        '<p style="color: #999; margin-top: 50px;">Not yet processed</p>'
-                    }
-                </div>
-            `;
-
-            modal.classList.add('show');
-        }
-
-        function closeComparisonModal() {
-            document.getElementById('comparisonModal').classList.remove('show');
-        }
-
         function updateStats() {
-            const total = images.length;
-            const cleaned = images.filter(img => img.status === 'cleaned').length;
-            const totalBytes = images.reduce((sum, img) => sum + img.size, 0);
-            const savedBytes = images.reduce((sum, img) => {
-                if (img.cleanedBlob) {
-                    return sum + (img.size - img.cleanedBlob.size);
+            const images = mediaFiles.filter(m => m.mediaType === 'image');
+            const videos = mediaFiles.filter(m => m.mediaType === 'video');
+            const processed = mediaFiles.filter(m => m.status === 'cleaned');
+            const totalBytes = mediaFiles.reduce((sum, m) => sum + m.size, 0);
+            const savedBytes = mediaFiles.reduce((sum, m) => {
+                if (m.cleanedBlob) {
+                    return sum + (m.size - m.cleanedBlob.size);
                 }
                 return sum;
             }, 0);
 
-            // Update both stat sections
-            totalImagesEl.textContent = total;
-            cleanedImagesEl.textContent = cleaned;
+            totalImagesEl.textContent = images.length;
+            totalVideosEl.textContent = videos.length;
+            cleanedMediaEl.textContent = processed.length;
             totalSizeEl.textContent = formatBytes(totalBytes);
             savedSizeEl.textContent = formatBytes(savedBytes);
 
-            topTotalImagesEl.textContent = total;
-            topCleanedImagesEl.textContent = cleaned;
+            topTotalMediaEl.textContent = mediaFiles.length;
+            topImageCountEl.textContent = images.length;
+            topVideoCountEl.textContent = videos.length;
+            topCleanedMediaEl.textContent = processed.length;
             topTotalSizeEl.textContent = formatBytes(totalBytes);
         }
 
@@ -1863,7 +2208,7 @@ Generated by Advanced Image Metadata Cleaner
             
             setTimeout(() => {
                 alertBox.classList.remove('show');
-            }, 5000);
+            }, 6000);
         }
 
         function formatBytes(bytes) {
@@ -1874,7 +2219,18 @@ Generated by Advanced Image Metadata Cleaner
             return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
         }
 
-        // Close modals on outside click
+        function formatDuration(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            
+            if (hrs > 0) {
+                return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Close modal on outside click
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
                 event.target.classList.remove('show');
